@@ -1,0 +1,47 @@
+# Input file to reproduce results of
+#
+# M. Luscher. "Properties and uses of the Wilson flow in Lattice QCD"
+# https://arxiv.org/pdf/1006.4518.pdf
+# (see table 1)
+
+[Run]
+user    = "croldan"
+host    = "ciclope2"
+name    = "BOTH44x44x44x44"
+dat     = "./dat"
+log     = "./log"
+cfg     = "./cfg"
+seed    = 20220802
+loadcfg = false
+
+[Simulation]
+group      = "SU3" # SU2 / SU3
+dimensions = 4
+size       = [44,44,44,44]
+blocks     = [4,4,4,4]
+action     = "WILSON" # WILSON / IMPROVED
+flow       = "BOTH" # WILSON / ZEUTHEN / BOTH
+beta       = 6.35
+
+[Boundary]
+type   = "PERIODIC" # PERIODIC / SF
+ntwist = [0,0,0,0,0,0]
+cG     = 1.0 # Correction for boundaries (SF only)
+phi0   = [0.0, 0.0] # Boundary fields (time = 0) (SF only)
+phiT   = [0.0, 0.0] # Boundary fields (time = T) (SF only)
+
+[HMC]
+nth        = 1000 # Number of thermalization steps
+ntr        = 41000 # Total MC trajectory length
+dtr_log    = 100
+dtr_ms     = 100
+dtr_cfg    = 1000
+nstep      = 20 # Integrator number of steps
+eps        = 0.1 # Integrator step size
+integrator = "OMF4" # "LEAPFROPG" / "OMF2" / "OMF4"
+
+[Flow]
+ntot       = 1600 # Maximum number of flow steps (0:maxflw)
+dnms       = 1
+eps        = 0.01 # Flow step size
+integrator = "RK3" # EULER / RK2 / RK3

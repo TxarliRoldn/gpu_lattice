@@ -1,0 +1,19 @@
+[General]
+id = "plaquette"
+volumes = ["16x16x16x16", "20x20x20x20", "24x24x24x24", "28x28x28x28", "32x32x32x32", "40x40x40x40", "44x44x44x44", "48x48x48x48", "56x56x56x56"]
+flows = ["wilson", "zeuthen"]
+coefs = [1, 1] # Plaquette for each flow
+append = false
+RG = false
+sommer_scales     = [3.363, 4.148, 5.006, 5.8454, 6.643, 8.282, 9.130, 10.043, 11.629]
+err_sommer_scales = [0.011, 0.015, 0.020, 0.0088, 0.015, 0.031, 0.041, 0.052, 0.073]
+
+[Action_density]
+names = ["tc", "t0", "tw"]
+values = [0.2, 0.3, 0.4] # Must be ordered
+functions = [0, 0, 0]
+
+[Derivative_action_density]
+names = ["w0"]
+values = [0.3]
+functions = ["sqrt"]
