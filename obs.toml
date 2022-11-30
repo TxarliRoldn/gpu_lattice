@@ -1,19 +1,27 @@
-[General]
-id = "plaquette"
-volumes = ["16x16x16x16", "20x20x20x20", "24x24x24x24", "28x28x28x28", "32x32x32x32", "40x40x40x40", "44x44x44x44", "48x48x48x48", "56x56x56x56"]
-flows = ["wilson", "zeuthen"]
-coefs = [1, 1] # Plaquette for each flow
-append = false
-RG = false
-sommer_scales     = [3.363, 4.148, 5.006, 5.8454, 6.643, 8.282, 9.130, 10.043, 11.629]
-err_sommer_scales = [0.011, 0.015, 0.020, 0.0088, 0.015, 0.031, 0.041, 0.052, 0.073]
+id    = "flw+obs"
+files = [
+    "../BOTH16x16x16x16wilson_flow.jld2",
+    "../BOTH20x20x20x20wilson_flow.jld2",
+    "../BOTH24x24x24x24wilson_flow.jld2"
+]
+uids  = [
+    "16^4,
+    "20^4,
+    "24^4"
+]
+
+[Simulation]
+betas = [5.76, 5.86, 5.96]
+flow  = "wilson"
+
+[Analysis]
+xi = 0.583333333333333  # Plaquette weight: xi * pl + (1 - xi) * cl
+rg = false # Renormalization group improvement
 
 [Action_density]
-names = ["tc", "t0", "tw"]
-values = [0.2, 0.3, 0.4] # Must be ordered
-functions = [0, 0, 0]
+names  = ["tc", "t0", "tw"]
+values = [ 0.2,  0.3,  0.4]
 
 [Derivative_action_density]
-names = ["w0"]
-values = [0.3]
-functions = ["sqrt"]
+names  = ["w0"]
+values = [ 0.3]
