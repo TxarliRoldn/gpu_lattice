@@ -1,4 +1,4 @@
-id    = "flw+obs"
+id    = "plaquette"
 files = [
     "../BOTH16x16x16x16wilson_flow.jld2",
     "../BOTH20x20x20x20wilson_flow.jld2",
@@ -6,7 +6,7 @@ files = [
 ]
 uids  = [
     "16^4",
-    "20^4,
+    "20^4",
     "24^4"
 ]
 
@@ -15,7 +15,7 @@ betas = [5.76, 5.86, 5.96]
 flow  = "wilson"
 
 [Analysis]
-xi = 0.583333333333333  # Plaquette weight: xi * pl + (1 - xi) * cl
+xi = 1     # Plaquette weight: xi * pl + (1 - xi) * cl
 rg = false # Renormalization group improvement
 
 [Action_density]
