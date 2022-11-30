@@ -5,7 +5,7 @@ files = [
     "../BOTH24x24x24x24wilson_flow.jld2"
 ]
 uids  = [
-    "16^4,
+    "16^4",
     "20^4,
     "24^4"
 ]
