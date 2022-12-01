@@ -13,6 +13,26 @@ chosen = [-1, 1.5, -1, -1]
 ### PARSE THE TOML FILE ###
 ###########################
 
+### FUNCTION inParse ###
+# Parse TOML file and return its data as variables
+#
+# Inputs:
+# - filename: path to the TOML file
+#
+# Outputs:
+# - id: id of this run
+# - fls: array of data files
+# - uis: unique id for each file
+# - bts: array of beta values
+# - flw: used flow
+# - xi: weight of the plaquette action density
+# - rgB: boolean whether to perform or nor renormalization 
+#        group improvement (set xi correctly when doing so)
+# - En: names of action density observables
+# - Ev: flow time values of action density observables
+# - dEn: names of derivative action density observables
+# - dEv: flow time values of derivative action density observables
+### --- ###
 function inParse(filename)
     params = TOML.parsefile(filename)
 
@@ -44,6 +64,16 @@ end
 ### FUNCTIONS TO INTERACT WITH JLD2 FILES ###
 #############################################
 
+### FUNCTION derivate ###
+# Central differences of y w.r.t. x
+#
+# Inputs:
+# - y: y vector
+# - x: x vector, same size as y
+#
+# Outputs:
+# - dy: derivative vector
+### --- ###
 function derivate(y, x)
     dy = Array{Float64}(undef, size(y)[1], size(y)[2]-2)
     for i in 2:(length(x)-1)
@@ -52,7 +82,20 @@ function derivate(y, x)
     return dy
 end
 
-function loadXsl(file, discretization) # discretization = Ysl or Wsl
+### FUNCTION loadXsl ###
+# Reads JLD2 file and extract action density related quantities
+# (TODO: topological charge)
+#
+# Inputs:
+# - file: path to JLD2 file
+# - discretization: either Ysl (clover) or Wsl (plaquette)
+#
+# Outputs:
+# - tfw: flow time vector trimmed in the extremes
+# - ttX: adimensional action density trimmed in the extremes
+# - tdttX: log derivative of the adimensional action density
+### --- ###
+function loadXsl(file, discretization)
 	data  = jldopen(file, "r")
 	nmeas = parse(Int64, keys(data[discretization])[end])
 	sfq   = parse(Int64, keys(data[discretization])[1])
@@ -77,6 +120,18 @@ end
 ### FUNCTIONS FOR RENORMALIZATION GROUP ###
 ###########################################
 
+### FUNCTION r0aPoly ###
+# Calculate r_0/a from \beta using functional
+# polynomial form.
+# (TODO: right now based on my Master's Thesis,
+# the method is improvable and polynomials should coincide in \beta = 6)
+#
+# Inputs:
+# - beta: value of beta (6/g_0^2)
+#
+# Outputs:
+# - ur0a: uwreal object of r_0/a
+### --- ###
 function r0aPoly(beta)
     global wpm["r0a.$beta"] = chosen
     if (beta < 5.7) || (beta > 6.9)
@@ -96,6 +151,17 @@ function r0aPoly(beta)
     end
 end
 
+### FUNCTION alphaMS ###
+# Calculate \alpha_{MS} from \beta using
+# r_0\Lambda_{MS} from Ramos, Dalla Brida.
+# Function adapted from R function of Gregorio Herdoiza
+#
+# Inputs:
+# - beta: value of \beta
+# - mulr0: scalar to multiply r_0/a (default = 1)
+# - powa: order of perturbation theory: 0, 1, 2, 3 (default = 3)
+# - Nf: number of flavours (default = 0)
+### --- ###
 function alphaMS(beta, mulr0=1, powa=3, Nf=0)
     r0 = r0aPoly(beta) * mulr0
     lambdaMS  = uwreal([0.660, 0.011], "refLamMS")
@@ -117,12 +183,43 @@ function alphaMS(beta, mulr0=1, powa=3, Nf=0)
     return alphaMS
 end
 
-dxi(beta, t) = 27/56 * ((alphaMS(beta)/alphaMS(beta, 1/sqrt(8*t)))^(7/11) - 1.0)
+### FUNCTION dxi ###
+# Modification to \xi for RG (assuming well selected xi)
+# 
+# Inputs:
+# - beta: value of \beta
+# - t: flow time
+#
+# Outputs:
+# - \Delta \xi
+### --- ###
+function dxi(beta, t)
+    return 27/56 * ((alphaMS(beta)/alphaMS(beta, 1/sqrt(8*t)))^(7/11) - 1.0)
+end
 
 ###############################################
 ### GET THE VALUES NEEDED FOR EXTRAPOLATION ###
 ###############################################
 
+### FUNCTION fileIteration ###
+# Get the needed values for extrapolation for one data file
+#
+# Inputs:
+# - fl: file path
+# - bt: \beta value
+# - xi: weight of plaquette
+# - rgB: boolen whether to perform RG or not
+# - En: names of action density observables
+# - Ev: flow time values of action density observables
+# - dEn: names of derivative action density observables
+# - dEv: flow time values of derivative action density observables
+#
+# Outputs:
+# - rt: flow time values before and after extrapolation point of AD
+# - drt: flow time values before and after extrapolation point of dAD
+# - rE: AD values before and after extrapolation point of AD
+# - drE: dAD values before and after extrapolation point of dAD
+### --- ###
 function fileIteration(fl, bt, xi, rgB, En, Ev, dEn, dEv)
     nE, ndE  = length(Ev), length(dEv)
 
@@ -174,6 +271,11 @@ end
 ### FUNCTIONS TO BUILD THE DICTIONARY ###
 #########################################
 
+### FUNCTION getObs! ###
+# Extrapolate and save into dict
+#
+# Inputs:
+# - dict: "Observable" dict to modify
 function getObs!(dict, y, x, refVal, name)
     r1, r2 = findall(y .< refVal)[end], findall(y .> refVal)[1]
     obs    = x[r1] + (refVal - y[r1]) * (y[r2] - y[r1])/(x[r2] - x[r1])
