@@ -275,17 +275,31 @@ end
 # Extrapolate and save into dict
 #
 # Inputs:
-# - dict: "Observable" dict to modify
-function getObs!(dict, y, x, refVal, name)
+# - dict: "Observable" dict to modify.
+# - x: float array with the just before
+#   and after values of the x axis.
+# - y: uwreal array with the just before
+#   and after values of the y axis.
+# - refVal: reference value.
+# - name: name of the observable
+### --- ###
+function getObs!(dict, x, y, refVal, name)
     r1, r2 = findall(y .< refVal)[end], findall(y .> refVal)[1]
     obs    = x[r1] + (refVal - y[r1]) * (y[r2] - y[r1])/(x[r2] - x[r1])
     uwerr(obs, wpm)
-    dict[name] = Dict("ADerr"        => obs,
+    dict[name] = Dict("ADerrors"     => obs,
                       "Value"        => value(obs),
                       "Uncertainty"  => err(obs),
                       "Correlations" => Dict())
 end
 
+### FUNCTION corrDicr! ###
+# Add the correlations with the rest
+# of the observables.
+#
+# Inputs:
+# - dict: "Observable" dict to modify
+### --- ###
 function corrDict!(dict)
     for n1 in keys(dict)
         for n2 in keys(dict)
@@ -298,38 +312,54 @@ function corrDict!(dict)
     end
 end
 
-function cleanDict!(dict)
-    for name in keys(dict)
-        delete!(dict[name], "ADerr")
-    end
-end
+############
+### MAIN ###
+############
 
 function main()
+    # Parse command line and input file
     inFile  = ARGS[1] # to be changed
     outFile = ARGS[2]
     id, fls, uis, bts, flw, xi, rgB, En, Ev, dEn, dEv = inParse(inFile)
 
+    # Create Dict
     dictObs = Dict(id => [])
 
+    # Iterate over data files
     for (i, (fl, bt, ui)) in enumerate(zip(fls, bts, uis))
         append!(dictObs[id], [Dict("UID" => ui, "Beta" => bt, "Flow" => flw, "Observables" => Dict())])
             
         rt, drt, rE, drE = fileIteration(fl, bt, xi, rgB, En, Ev, dEn, dEv)
         
         for (name, refVal) in zip(En, Ev)
-            getObs!(dictObs[id][end]["Observables"], rE,  rt,  refVal, name)
+            getObs!(dictObs[id][end]["Observables"], rt, rE,  refVal, name)
         end
         for (name, refVal) in zip(dEn, dEv)
-            getObs!(dictObs[id][end]["Observables"], drE, drt, refVal, name)
+            getObs!(dictObs[id][end]["Observables"], drt, drE, refVal, name)
         end
         corrDict!(dictObs[id][end]["Observables"])
-        cleanDict!(dictObs[id][end]["Observables"])
     end
 
-    dictSave = isfile(outFile) ? merge(JSON.parsefile(outFile), dictObs) : dictObs
-    open(outFile, "w") do io
-        JSON.print(io, dictSave)
+    # Create a dict copy without uwreals
+    cdict = copy(dictObs)
+    for i in eachindex(fls)
+        for name in keys(cdict[id][i]["Observables"])
+            delete!(cdict[id][i]["Observables"][name], "ADerrors")
+        end
     end
+	
+    # JSON save
+    dictJSON = isfile(outFile*".json") ? merge(JSON.parsefile(outFile*".json"), cdict) : cdict
+    open(outFile*".json", "w") do io
+        JSON.print(io, dictJSON)
+    end
+    
+    # JLD2 save
+    jldopen(outFile*".jld2", "a+") do file
+        file[id] = dictObs[id]
+    end
+end
+    
 end
 
 main()
